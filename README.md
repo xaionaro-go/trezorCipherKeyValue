@@ -12,6 +12,7 @@ Passphrase ********
 $ echo $ENCRYPTED_KEY
 304bc949dd6a39049e3c40ea48ae75e6
 $ echo -n "$ENCRYPTED_KEY" | "$GOPATH"/bin/trezorCipherKeyValue --decrypt --hex
+Passphrase ********
 Some key
 ```
 
