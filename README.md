@@ -7,9 +7,6 @@ GOPATH="`go env GOPATH`"
 go get github.com/xaionaro-go/trezorCipherKeyValue
 go install github.com/xaionaro-go/trezorCipherKeyValue
 $ ENCRYPTED_KEY="$(TREZOR_CIPHER_VALUE="test data" "$GOPATH"/bin/trezorCipherKeyValue --encrypt --hex)"
-Setting Trezor device state to the initial state.
-Sent a request to a Trezor device (please confirm the operation if required).
-Running command "/lib/cryptsetup/askpass Passphrase"
 PIN ****
 Passphrase ********
 $ echo $ENCRYPTED_KEY
