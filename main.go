@@ -10,6 +10,7 @@ import (
 
 	"github.com/conejoninja/tesoro/pb/messages"
 	"github.com/pborman/getopt/v2"
+	"github.com/xaionaro-go/pinentry"
 	"github.com/xaionaro-go/trezor"
 )
 
@@ -37,7 +38,8 @@ func main() {
 	hexFlag := getopt.BoolLong("hex", 'H', "consider encrypted key to be HEX-encoded (for both --encrypt and --decrypt)")
 	verboseFlag := getopt.BoolLong("verbose", 'v', "print messages about what is going on")
 	keyNameParameter := getopt.StringLong("key-name", 'k', "unnamed key", "sets the name of a key to be encrypted/decrypted with the Trezor")
-	askpassPathParameter := getopt.StringLong("askpass-path", 'p', "/lib/cryptsetup/askpass", `sets the path of the utility to ask the PIN and the passphrase (for Trezor) [default: "/lib/cryptsetup/askpass"]`)
+	askpassPathParameter := getopt.StringLong("askpass-path", 'p', "/lib/cryptsetup/askpass", `sets the path of the utility to ask the PIN/Passphrase (for Trezor) [default: "/lib/cryptsetup/askpass"]`)
+	usePinentryFlag := getopt.BoolLong("use-pinentry", 'P', `use "pinentry" utility to ask for PIN/Passphrase instead of "askpass"`)
 	inputValueFileParameter := getopt.StringLong("input-value-file", 'i', "-", `sets the path of the file to read the input value [default: "-" (stdin)]; otherwise use can pass the input value using environment variable TREZOR_CIPHER_KV`)
 	getopt.Parse()
 
@@ -52,15 +54,29 @@ func main() {
 	}
 
 	trezorInstance := trezor.New()
-	trezorInstance.SetGetPinFunc(func(title, description, ok, cancel string) ([]byte, error) {
-		if *verboseFlag {
-			fmt.Printf(`Running command "%v %v"`+"\n", *askpassPathParameter, title)
-		}
-		cmd := exec.Command(*askpassPathParameter, title)
-		cmd.Stdin = os.Stdin
-		cmd.Stderr = os.Stderr
-		return cmd.Output()
-	})
+
+	if *usePinentryFlag {
+		p, _ := pinentry.NewPinentryClient()
+		defer p.Close()
+		trezorInstance.SetGetPinFunc(func(title, description, ok, cancel string) ([]byte, error) {
+			p.SetTitle(title)
+			p.SetDesc(description)
+			p.SetPrompt(title)
+			p.SetOK(ok)
+			p.SetCancel(cancel)
+			return p.GetPin()
+		})
+	} else {
+		trezorInstance.SetGetPinFunc(func(title, description, ok, cancel string) ([]byte, error) {
+			if *verboseFlag {
+				fmt.Printf(`Running command "%v %v"`+"\n", *askpassPathParameter, title)
+			}
+			cmd := exec.Command(*askpassPathParameter, title)
+			cmd.Stdin = os.Stdin
+			cmd.Stderr = os.Stderr
+			return cmd.Output()
+		})
+	}
 	trezorInstance.SetGetConfirmFunc(func(title, description, ok, cancel string) (bool, error) {
 		return false, nil // Confirmation is required to reconnect to Trezor. We considered that disconnected Trezor is enough to exit the program.
 	})
