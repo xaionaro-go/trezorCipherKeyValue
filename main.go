@@ -1,11 +1,12 @@
 package main
 
 import (
+	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"syscall"
-	"encoding/hex"
 
 	"github.com/conejoninja/tesoro/pb/messages"
 	"github.com/pborman/getopt/v2"
@@ -13,10 +14,7 @@ import (
 )
 
 var (
-	// Just some random values (from /dev/random)
-	iv = []byte{
-		0xf9, 0xa1, 0x99, 0xec, 0xa6, 0x81, 0x78, 0x19, 0xcc, 0x67, 0x55, 0x61, 0x6e, 0xc3, 0x1e, 0xd8,
-	}
+	iv = []byte("trezorCipher IV")
 )
 
 func usage() int {
@@ -38,11 +36,14 @@ func main() {
 	decryptFlag := getopt.BoolLong("decrypt", 'd', "decrypt a key")
 	hexFlag := getopt.BoolLong("hex", 'H', "consider encrypted key to be HEX-encoded (for both --encrypt and --decrypt)")
 	verboseFlag := getopt.BoolLong("verbose", 'v', "print messages about what is going on")
-	keyNameParameter := getopt.StringLong("key-name", 0, "unnamed key", "sets the name of a key to be encrypted/decrypted with the Trezor")
+	keyNameParameter := getopt.StringLong("key-name", 'k', "unnamed key", "sets the name of a key to be encrypted/decrypted with the Trezor")
+	askpassPathParameter := getopt.StringLong("askpass-path", 'p', "/lib/cryptsetup/askpass", `sets the path of the utility to ask the PIN and the passphrase (for Trezor) [default: "/lib/cryptsetup/askpass"]`)
+	inputValueFileParameter := getopt.StringLong("input-value-file", 'i', "-", `sets the path of the file to read the input value [default: "-" (stdin)]; otherwise use can pass the input value using environment variable TREZOR_CIPHER_KV`)
 	getopt.Parse()
 
 	if *helpFlag {
-		os.Exit(usage())
+		usage()
+		os.Exit(0)
 	}
 
 	if !*encryptFlag && !*decryptFlag {
@@ -51,13 +52,45 @@ func main() {
 	}
 
 	trezorInstance := trezor.New()
+	trezorInstance.SetGetPinFunc(func(title, description, ok, cancel string) ([]byte, error) {
+		if *verboseFlag {
+			fmt.Printf(`Running command "%v %v"`+"\n", *askpassPathParameter, title)
+		}
+		cmd := exec.Command(*askpassPathParameter, title)
+		cmd.Stdin = os.Stdin
+		cmd.Stderr = os.Stderr
+		return cmd.Output()
+	})
+	trezorInstance.SetGetConfirmFunc(func(title, description, ok, cancel string) (bool, error) {
+		return false, nil // Confirmation is required to reconnect to Trezor. We considered that disconnected Trezor is enough to exit the program.
+	})
 
 	if *verboseFlag {
-		fmt.Println("Reading the data from stdin.")
+		fmt.Println("Setting Trezor device state to the initial state.")
 	}
-	stdinBytes, err := ioutil.ReadAll(os.Stdin)
-	checkError(err)
-	data := stdinBytes
+	err := trezorInstance.Reset()
+	if err != nil {
+		panic(fmt.Errorf("Cannot set the Trezor device state to the initial state"))
+	}
+
+	data := []byte(os.Getenv("TREZOR_CIPHER_VALUE"))
+	if len(data) == 0 { // If the variable wasn't set then reading from stdin/file (see option `--input-value-file`)
+		if *inputValueFileParameter == "-" {
+			if *verboseFlag {
+				fmt.Println("Reading the data from stdin.")
+			}
+			var err error
+			data, err = ioutil.ReadAll(os.Stdin)
+			checkError(err)
+		} else {
+			if *verboseFlag {
+				fmt.Printf(`Reading the data file "%v"`+"\n", *inputValueFileParameter)
+			}
+			var err error
+			data, err = ioutil.ReadFile(*inputValueFileParameter)
+			checkError(err)
+		}
+	}
 
 	if *decryptFlag {
 		var dataHexed string
@@ -75,13 +108,12 @@ func main() {
 		data = []byte(dataHexed)
 	}
 
-	
 	if *verboseFlag {
 		fmt.Println("Sent a request to a Trezor device (please confirm the operation if required).")
 	}
 
-	result, msgType := trezorInstance.CipherKeyValue(`m/71'/a6'/3'/45'/97'`, *encryptFlag, *keyNameParameter, data, iv, true, true)
-	switch msgType {
+	result, msgType := trezorInstance.CipherKeyValue(`m/10019'/1'`, *encryptFlag, *keyNameParameter, data, iv, true, true)
+	switch messages.MessageType(msgType) {
 	case messages.MessageType_MessageType_Success, messages.MessageType_MessageType_CipheredKeyValue:
 	default:
 		panic(fmt.Errorf("Unexpected message: %v: %v", msgType, string(result)))
@@ -93,4 +125,3 @@ func main() {
 
 	fmt.Print(string(result))
 }
-

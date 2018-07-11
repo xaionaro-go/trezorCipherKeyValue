@@ -26,16 +26,33 @@ An encrypted value is aligned to 16 bytes.
 Arguments:
 ```
 $ "$GOPATH"/bin/trezorCipherKeyValue --help
-Usage: trezorCipherKeyValue [-dehHv] [--key-name value] [parameters ...]
+Usage: trezorCipherKeyValue [-dehHv] [-i value] [-k value] [-p value] [parameters ...]
  -d, --decrypt  decrypt a key
  -e, --encrypt  encrypt a key
  -h, --help     print help message
  -H, --hex      consider encrypted key to be HEX-encoded (for both --encrypt
                 and --decrypt)
-     --key-name=value
+ -i, --input-value-file=value
+                sets the path of the file to read the input value [default:
+                "-" (stdin)]; otherwise use can pass the input value using
+                environment variable TREZOR_CIPHER_VALUE
+ -k, --key-name=value
                 sets the name of a key to be encrypted/decrypted with the
                 Trezor
+ -p, --askpass-path=value
+                sets the path of the utility to ask the PIN and the
+                passphrase (for Trezor) [default: "/lib/cryptsetup/askpass"]
  -v, --verbose  print messages about what is going on
+```
+
+```
+$ ENCRYPTED_VALUE="$(TREZOR_CIPHER_VALUE="test data" "$GOPATH"/bin/trezorCipherKeyValue -e -v -H)"
+Setting Trezor device state to the initial state.
+Sent a request to a Trezor device (please confirm the operation if required).
+Running command "/lib/cryptsetup/askpass Passphrase"
+Passphrase ********
+$ echo $ENCRYPTED_VALUE
+304bc949dd6a39049e3c40ea48ae75e6
 ```
 
 The utility was requested here: [https://github.com/xaionaro-go/trezorLuks/issues/2](https://github.com/xaionaro-go/trezorLuks/issues/2)
