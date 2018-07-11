@@ -46,7 +46,7 @@ Usage: trezorCipherKeyValue [-dehHv] [-i value] [-k value] [-p value] [parameter
 ```
 
 ```
-$ ENCRYPTED_VALUE="$(TREZOR_CIPHER_VALUE="test data" "$GOPATH"/bin/trezorCipherKeyValue -e -v -H)"
+$ ENCRYPTED_VALUE="$(TREZOR_CIPHER_VALUE="test data" "$GOPATH"/bin/trezorCipherKeyValue -e -H)"
 Setting Trezor device state to the initial state.
 Sent a request to a Trezor device (please confirm the operation if required).
 Running command "/lib/cryptsetup/askpass Passphrase"
