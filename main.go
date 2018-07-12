@@ -42,7 +42,7 @@ func main() {
 	keyNameParameter := getopt.StringLong("key-name", 'k', "unnamed key", "sets the name of a key to be encrypted/decrypted with the Trezor")
 	askpassPathParameter := getopt.StringLong("askpass-path", 'p', "/lib/cryptsetup/askpass", `sets the path of the utility to ask the PIN/Passphrase (for Trezor) [default: "/lib/cryptsetup/askpass"]`)
 	usePinentryFlag := getopt.BoolLong("use-pinentry", 'P', `use "pinentry" utility to ask for PIN/Passphrase instead of "askpass"`)
-	inputValueFileParameter := getopt.StringLong("input-value-file", 'i', "-", `sets the path of the file to read the input value [default: "-" (stdin)]; otherwise use can pass the input value using environment variable TREZOR_CIPHER_KV`)
+	inputValueFileParameter := getopt.StringLong("input-value-file", 'i', "-", `sets the path of the file to read the input value [default: "-" (stdin)]; otherwise use can pass the input value using environment variable TREZOR_CIPHER_VALUE`)
 	getopt.Parse()
 
 	if *helpFlag {
