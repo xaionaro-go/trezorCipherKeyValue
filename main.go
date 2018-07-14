@@ -12,7 +12,6 @@ import (
 	"github.com/pborman/getopt/v2"
 	"github.com/xaionaro-go/cryptoWallet"
 	"github.com/xaionaro-go/cryptoWallet/interfaces"
-	"github.com/xaionaro-go/cryptoWallet/vendors"
 	"github.com/xaionaro-go/pinentry"
 )
 
@@ -55,16 +54,14 @@ func main() {
 		os.Exit(usage())
 	}
 
-	trezorInstances := cryptoWallet.Find(cryptoWallet.Filter{
-		VendorID:   &[]uint16{vendors.GetVendorID("satoshilabs")}[0],
-		ProductIDs: []uint16{1 /* Trezor One */},
-	})
-
-	if len(trezorInstances) == 0 {
+	wallet := cryptoWallet.FindAny()
+	if wallet == nil {
 		panic("No trezor devices found")
 	}
-
-	trezorInstance := trezorInstances[0].(cryptoWalletInterfaces.Trezor)
+	trezorInstance, ok := wallet.(cryptoWalletInterfaces.Trezor)
+	if !ok {
+		panic("No trezor devices found")
+	}
 
 	if *usePinentryFlag {
 		p, _ := pinentry.NewPinentryClient()
