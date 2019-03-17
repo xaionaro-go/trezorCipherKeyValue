@@ -139,7 +139,9 @@ func main() {
 		os.Exit(1)
 	}
 	if !*dummyDeviceFlag {
-		if _, ok := wallet.(cryptoWalletInterfaces.Trezor); !ok {
+		if trezorInstance, ok := wallet.(cryptoWalletInterfaces.Trezor); ok {
+			trezorInstance.SetDefaultAskOnEncode(true)
+		} else {
 			fmt.Fprintf(os.Stderr, "No trezor devices found\n")
 			os.Exit(1)
 		}
