@@ -32,8 +32,9 @@ An encrypted value is aligned to 16 bytes.
 Arguments:
 ```
 $ "$GOPATH"/bin/trezorCipherKeyValue --help
-Usage: trezorCipherKeyValue [-dehHPv] [-i value] [-k value] [-p value] [parameters ...]
+Usage: trezorCipherKeyValue [-dDehHPv] [-i value] [-k value] [-p value] [parameters ...]
  -d, --decrypt  decrypt a key
+ -D, --dummy    imitate a dummy Trezor device
  -e, --encrypt  encrypt a key
  -h, --help     print help message
  -H, --hex      consider encrypted key to be HEX-encoded (for both --encrypt
@@ -41,20 +42,18 @@ Usage: trezorCipherKeyValue [-dehHPv] [-i value] [-k value] [-p value] [paramete
  -i, --input-value-file=value
                 sets the path of the file to read the input value [default:
                 "-" (stdin)]; otherwise use can pass the input value using
-                environment variable TREZOR_CIPHER_KV
+                environment variable TREZOR_CIPHER_VALUE [-]
  -k, --key-name=value
                 sets the name of a key to be encrypted/decrypted with the
-                Trezor
+                Trezor [unnamed key]
  -p, --askpass-path=value
                 sets the path of the utility to ask the PIN/Passphrase (for
-                Trezor) [default: "/lib/cryptsetup/askpass"]
+                Trezor) [default: "/lib/cryptsetup/askpass",
+                "systemd-ask-password"]
  -P, --use-pinentry
                 use "pinentry" utility to ask for PIN/Passphrase instead of
                 "askpass"
  -v, --verbose  print messages about what is going on
-```
-
-```
 ```
 
 The utility was requested here: [https://github.com/xaionaro-go/trezorLuks/issues/2](https://github.com/xaionaro-go/trezorLuks/issues/2)
